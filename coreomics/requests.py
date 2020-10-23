@@ -28,7 +28,7 @@ class CoreomicsAPI(object):
 class SubmissionManager(object):
     @staticmethod
     def get_submissions(querystring=''):
-        return CoreomicsAPI().request('/api/submissions/{}'.format(querystring))
+        return CoreomicsAPI().request('/api/submissions/{}'.format(querystring)).get('results')
 
 class Submission(object):
     def __init__(self, submission_data):
