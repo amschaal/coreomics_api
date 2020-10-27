@@ -31,20 +31,19 @@ class SubmissionShare(object):
     def share(self):
         self.permissions = CoreomicsAPI().request('/api/bioshare/submission_shares/{}/share/'.format(self.id), 'POST', {'submission': self.id})
         return self.permissions
-    def send_rsync_command(self, source, dest_dir='/', ssh_key='~/.ssh/id_rsa'):
-        return ['rsync', '-e', 'ssh -i {}'.format(expanduser(ssh_key)), '-vrtL', '--no-p', '--no-g', '--chmod=ugo=rwX', source, 'bioshare@{}:/{}{}'.format(self.server, self.bioshare_id, dest_dir)]
-#         return ['rsync', '-e', 'ssh -i {}'.format(expanduser(ssh_key)), '-vrtL', '--no-p', '--no-g', '--chmod=ugo=rwX', source, '{}{}'.format('bioshare@bioshare.bioinformatics.ucdavis.edu:/m4ym4kux7b7ngi9', dest_dir)]
-#         rsync -vrt --no-p --no-g --chmod=ugo=rwX /path/to/my/files bioshare@server.domain.net:/{}/
-    def receive_rsync_command(self, dest, source_dir="/", ssh_key='~/.ssh/id_rsa'):
-#         rsync -vrt bioshare@server.domain.net:/uqgva457544351l/test/ /to/my/local/directory
-        return ['rsync', '-e', 'ssh -i {}'.format(expanduser(ssh_key)), '-vrt', 'bioshare@{}:/{}{}'.format(self.server, self.bioshare_id, source_dir), dest]
-#         return ['rsync', '-e', 'ssh -i {}'.format(expanduser(ssh_key)), '-vrt', 'bioshare@bioshare.bioinformatics.ucdavis.edu:/m4ym4kux7b7ngi9{}'.format(source_dir), dest]
-    def send_rsync(self, source, dest_dir='/', ssh_key='~/.ssh/id_rsa'):
-        return self.rsync(self.send_rsync_command(source, dest_dir, ssh_key))
-    def receive_rsync(self, dest, source_dir="/", ssh_key='~/.ssh/id_rsa'):
-        return self.rsync(self.receive_rsync_command(dest, source_dir, ssh_key))
-    def rsync(self, command):
+    def send_rsync_command(self, source, dest_dir='/', ssh_key='~/.ssh/id_rsa', verbose=False):
+        return ['rsync', '-e', 'ssh -i {}'.format(expanduser(ssh_key)), '-rtL'+('v' if verbose else ''), '--no-p', '--no-g', '--chmod=ugo=rwX', source, 'bioshare@{}:/{}{}'.format(self.server, self.bioshare_id, dest_dir)]
+    def receive_rsync_command(self, dest, source_dir="/", ssh_key='~/.ssh/id_rsa', verbose=False):
+        return ['rsync', '-e', 'ssh -i {}'.format(expanduser(ssh_key)), '-rt'+('v' if verbose else ''), 'bioshare@{}:/{}{}'.format(self.server, self.bioshare_id, source_dir), dest]
+    def send_rsync(self, source, dest_dir='/', ssh_key='~/.ssh/id_rsa', logfile=None, verbose=False):
+        return self.rsync(self.send_rsync_command(source, dest_dir, ssh_key, verbose=verbose), logfile=logfile)
+    def receive_rsync(self, dest, source_dir="/", ssh_key='~/.ssh/id_rsa', logfile=None, verbose=False):
+        return self.rsync(self.receive_rsync_command(dest, source_dir, ssh_key, verbose=verbose), logfile=logfile)
+    def rsync(self, command, logfile=None):
         print(' '.join(command))
-        return subprocess.Popen(command).pid
-#         return subprocess.Popen(command, stdout=subprocess.STDOUT, stderr=subprocess.STDOUT)
+        if logfile:
+            with open(logfile,"ab") as out:
+                return subprocess.Popen(command, stdout=out, stderr=out).pid
+        else:
+            return subprocess.Popen(command).pid
         
